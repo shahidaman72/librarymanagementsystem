@@ -9,10 +9,11 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+from pymodm import connect
 from pathlib import Path
 import pymongo
 import djongo
+import urllib
 from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -76,13 +77,16 @@ WSGI_APPLICATION = 'library.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
+username='darshahid'
+password=urllib.parse.quote_plus('DGTrveeWfBQzx9JO')
+print(password)
 DATABASES = {
         'default': {
             'ENGINE': 'djongo',
             'NAME': 'library',
+            "PORT":27017,
             'CLIENT': {
-                'host': "mongodb://localhost:27017/library"
+                'host': "mongodb+srv://"+username+":"+password+"@cluster0.bmlof.mongodb.net/library?retryWrites=true&w=majority"
             }  
         }
 }
@@ -131,7 +135,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-MONGO_CONNECTION = pymongo.MongoClient("mongodb://localhost:27017/library")
+MONGO_CONNECTION = connect("mongodb+srv://"+username+":"+password+"@cluster0.bmlof.mongodb.net/library?retryWrites=true&w=majority",alias="mongo_app")
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
