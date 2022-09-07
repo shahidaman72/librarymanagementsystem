@@ -7,11 +7,11 @@ from rest_framework import status
 from rest_framework.response import Response
 import requests
 import json
-from libraryapp.models import mongo_client
+# from libraryapp.models import mongo_client
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
-from .serializer import BaseUserSerializer,BaseUserCreateSerializer,BaseUserUpdateSerializer
-from .models import BaseUser
+from .serializer import BaseUserSerializer,BaseUserCreateSerializer,BaseUserUpdateSerializer,BooksSerializer
+from .models import BaseUser,Books
 from rest_framework import status, viewsets
 import libraryapp.utils as ui_utils
 import re
@@ -20,6 +20,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
+from django.http import JsonResponse
 
 class PublicEndpoint(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -206,61 +207,66 @@ def validate_password(new_password):
     return valid
 
 
-class Books(APIView):
+class BooksClass(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     print("ddc",authentication_classes)
     def get(self, request):
         class_name = self.__class__.__name__
-        print(request.user)
-        res = list(mongo_client.Books.find({}))
-        data=[]
-        for i in res:
-            i["id"]=str(i.get("_id"))
-            del i["_id"]
-            data.append(dict(i))
-        return  ui_utils.handle_response(class_name,data=data,success=True)
+        data = Books.objects.filter()
+        obj = BooksSerializer(data=data, many=True)
+        if obj.is_valid():
+            print(obj)
+        else:
+            print(obj.errors)
+        #print(obj)
+        return ui_utils.handle_response({}, data=obj.data, success=True) 
 
     def post(self, request):
         class_name = self.__class__.__name__
+        data=request.data
         if request.user.usertype=="lib":
-            data=request.data
-            print(data)
-            data["lastupdated"]=datetime.datetime.now()
-            res = mongo_client.Books.insert_one(data)
+            
+            data1 = Books.objects.create(
+                    name=data.get("name"),author=data.get("author"),status=data.get("status"),added_by=request.user,created_time=datetime.now(),updated_time=datetime.now())
             return ui_utils.handle_response(class_name,data=data,success=True)
-            #return HttpResponse(json.dumps(data), content_type="application/json")
+           
         return ui_utils.handle_response("You dont have right permissions to access the Api",success=False)
     
-    def update(self, request):
-        bookid=query_params.get("book_id")
+    def put(self, request):
+        bookid=request.query_params.get("book_id")
         if request.user.usertype=="lib":
             data=request.data
-            context={}
-            if data.get("status"):
-                context["status"]=data.get("status")
-            if data.get("name"):
-                context["name"]=data.get("name")
-            context["lastupdated"]=datetime.datetime.now()
-
-
-            res = mongo_client.Books.update({"_id":bookid},{"$set":context})
-            return HttpResponse(json.dumps(data), content_type="application/json")
+            
+            data["updated_time"]=datetime.now()
+            data["created_time"]=datetime.now()
+            if data["status"]=="available":
+                data["borrowed_by"]=None
+            try:
+                data1 = Books.objects.filter(id=bookid).update(**data)
+                return ui_utils.handle_response({},data="updated",success=True)
+            except Exception as e:
+                 return ui_utils.handle_response({},data=str(e),success=True)
         if request.user.usertype=="mem":
             data=request.data
             context={}
             if data.get("status"):
+                if data["status"]=="available":
+                    context["borrowed_by"]=None
                 context["status"]=data.get("status")
-                context["lastupdated"]=datetime.datetime.now()
-                res = mongo_client.Books.update({"_id":bookid},{"$set":context})
-            return HttpResponse(json.dumps(data), content_type="application/json")
-
+                context["updated_time"]=datetime.now()
+                context["borrowed_by"]=request.user
+                try:
+                    data1 = Books.objects.filter(id=bookid).update(**context)
+                    return ui_utils.handle_response({},data="updated",success=True)
+                except Exception as e:
+                    return ui_utils.handle_response({},data=str(e),success=True)
     def delete(self, request):
         bookid=query_params.get("book_id")
         
-        res = mongo_client.Books.delete({"_id":bookid})
+        res = Books.objects.delete(id=bookid)
         
-        return HttpResponse("deleted sucessfully", content_type="application/json")
+        return ui_utils.handle_response({},data="deleted",success=False)
 
 class deleteuser(APIView):
     authentication_classes=[JWTAuthentication]
@@ -271,8 +277,19 @@ class deleteuser(APIView):
             user=BaseUser.objects.filter(username=username)
             if user.usertype=="mem":
                 user.delete()
-                return HttpResponse("deleted sucessfully", content_type="application/json")
+                return ui_utils.handle_response({},data="deleted",success=True)
+
         elif request.user.usertype=="mem":
             user=BaseUser.objects.filter(username=request.user.username).delete()
-            return HttpResponse("deleted sucessfully", content_type="application/json")
-        return HttpResponse("user not available or u dont have permissions to delete this user", content_type="application/json")
+            return ui_utils.handle_response({},data="deleted",success=True)
+        
+        return ui_utils.handle_response({},data="user not available or u dont have permissions to delete this user",success=True)
+
+class BooksClass1(APIView):
+    
+    def get(self, request):
+        class_name = self.__class__.__name__
+        data = Books.objects.filter()
+        obj = BooksSerializer(data, many=True)
+        
+        return JsonResponse( obj.data,safe=False)

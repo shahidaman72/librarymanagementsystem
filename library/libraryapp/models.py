@@ -1,12 +1,12 @@
 from django.db import models
 from django.conf import settings
 # Create your models here.
-from pymongo import MongoClient
+#from pymongo import MongoClient
 # client = MongoClient('localhost', settings.MONGO_PORT, username=settings.MONGO_USER, password=settings.MONGO_PASSWORD, maxPoolSize=2, waitQueueMultiple=10)
 # mongo_client = client[settings.MONGO_DB]
 #mongo_client = MongoClient(settings.MONGO_CONNECTION)
-print(settings.MONGO_CONNECTION)
-mongo_client = settings.MONGO_CONNECTION
+# print(settings.MONGO_CONNECTION)
+# mongo_client = settings.MONGO_CONNECTION
 
 #mongo_client = settings.MONGO_CONNECTION.testDEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -19,10 +19,7 @@ from django.contrib.auth.base_user import BaseUserManager
 
 
 class BaseUser(AbstractUser):
-    """
-    This is base user class that inherits AbstractBaseUser and adds an additional field.
-    """
-    #_id = models.BigAutoField(primary_key=False)
+    
     user_code = models.CharField(max_length=255, default=settings.DEFAULT_USER_CODE)
     username = models.CharField(max_length=20, null=False,unique=True,primary_key=True)
     password =models.CharField(max_length=20, null=True, blank=True)
@@ -37,3 +34,18 @@ class BaseUser(AbstractUser):
 
     class Meta:
         db_table = 'base_user'
+
+class Books(models.Model):
+
+    #book_id = models.DEFAULT_AUTO_FIELD(max_length=255, default=settings.DEFAULT_USER_CODE)
+    name = models.CharField(max_length=20, null=True)
+    author =models.CharField(max_length=20, null=True, blank=True)
+    status = models.CharField(max_length=20, null=True, blank=True)
+    borrowed_by = models.ForeignKey('BaseUser', null=True, blank=True, on_delete=models.CASCADE,related_name='borrowed_by')
+    added_by=models.ForeignKey('BaseUser', null=True, blank=True, on_delete=models.CASCADE,related_name='added_by')
+    created_time=models.DateTimeField(null=True, blank=True)
+    updated_time=models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'books'
+

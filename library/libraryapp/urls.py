@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 urlpatterns = [
 
-    path(r'books/', views.Books.as_view()),
+    path(r'books/', views.BooksClass.as_view()),
+    path(r'home/', views.BooksClass1.as_view()),
 
 ]
 

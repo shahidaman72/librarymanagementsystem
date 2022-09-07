@@ -18,7 +18,11 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+Config = None
+try:
+    from .config import Config
+except ImportError:
+    print("config not found")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -77,19 +81,28 @@ WSGI_APPLICATION = 'library.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-username='darshahid'
-password=urllib.parse.quote_plus('DGTrveeWfBQzx9JO')
-print(password)
-DATABASES = {
+# username='darshahid'
+# password=urllib.parse.quote_plus('DGTrveeWfBQzx9JO')
+if Config:
+    DATABASES = {
+            'default': {
+                'NAME': Config.DATABASE['NAME'],
+                'ENGINE': Config.DATABASE['ENGINE'],
+                'HOST': Config.DATABASE['HOST'],
+                'USER': Config.DATABASE['USER'],
+                'PASSWORD': Config.DATABASE['PASSWORD'],
+            }
+    }
+else:
+    DATABASES = {
         'default': {
-            'ENGINE': 'djongo',
-            'NAME': 'library',
-            "PORT":27017,
-            'CLIENT': {
-                'host': "mongodb+srv://"+username+":"+password+"@cluster0.bmlof.mongodb.net/library?retryWrites=true&w=majority"
-            }  
+                'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+                'ENGINE': 'django.db.backends.sqlite3',
+                'HOST': 'localhost',
+                'USER': 'root',
+                'PASSWORD': '',
+            }
         }
-}
 DEFAULT_USER_ID = 1  # make sure a user with this id exists in the db
 DEFAULT_USER_CODE = '0'  # default code for this user is '0'. which means a user with that id has to an admin
 AUTH_USER_MODEL = 'libraryapp.BaseUser'  # refer all references to User model by this name
@@ -135,7 +148,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-MONGO_CONNECTION = connect("mongodb+srv://"+username+":"+password+"@cluster0.bmlof.mongodb.net/library?retryWrites=true&w=majority",alias="mongo_app")
+#MONGO_CONNECTION = connect("mongodb+srv://"+username+":"+password+"@cluster0.bmlof.mongodb.net/library?retryWrites=true&w=majority",alias="mongo_app")
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

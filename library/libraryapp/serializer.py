@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer
-from .models import (BaseUser)
+from .models import (BaseUser,Books)
 from rest_framework import serializers
-
+import json
 class BaseUserSerializer(ModelSerializer):
     """
     You can only write a password. Not allowed to read it. Hence password is in extra_kwargs dict.
@@ -108,3 +108,26 @@ class BaseUserCreateSerializer(ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+class BooksSerializer(ModelSerializer):
+    added_by = serializers.SerializerMethodField()
+    borrowed_by=serializers.SerializerMethodField()
+    class Meta:
+        model = Books
+        fields = '__all__'
+        #fields = ('name','author','status',"borrowed_by","added_by","created_time","updated_time")
+
+    def get_added_by(self,obj):
+        
+        obj = BaseUser.objects.filter(username=obj.added_by).first()
+        if obj:
+            return obj.username
+        else: 
+            return None
+    def get_borrowed_by(self,obj):
+        
+        obj = BaseUser.objects.filter(username=obj.borrowed_by).first()
+        if obj:
+            return obj.username
+        else: 
+            return None
