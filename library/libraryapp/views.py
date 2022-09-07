@@ -271,17 +271,20 @@ class BooksClass(APIView):
 class deleteuser(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
-    def delete(request):
-        username=query_params.get("username")
-        if request.user.usertype=="lib":
-            user=BaseUser.objects.filter(username=username)
-            if user.usertype=="mem":
-                user.delete()
-                return ui_utils.handle_response({},data="deleted",success=True)
-
-        elif request.user.usertype=="mem":
+    def delete(self,request):
+        username=request.query_params.get("username")
+        print(request.user.usertype)
+        if str(request.user.usertype)=="lib":
+            user=BaseUser.objects.filter(username=username).first()
+            if user:
+                if user.usertype=="mem":
+                    user.delete()
+                    return ui_utils.handle_response({},data="deletedbylib",success=True)
+            else:
+                return ui_utils.handle_response({},data="user not found or  u dont have permissions to delete this user",success=True)
+        elif str(request.user.usertype)=="mem":
             user=BaseUser.objects.filter(username=request.user.username).delete()
-            return ui_utils.handle_response({},data="deleted",success=True)
+            return ui_utils.handle_response({},data="deletedbyuser",success=True)
         
         return ui_utils.handle_response({},data="user not available or u dont have permissions to delete this user",success=True)
 

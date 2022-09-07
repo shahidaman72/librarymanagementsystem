@@ -6,6 +6,7 @@ urlpatterns = [
 
     path(r'books/', views.BooksClass.as_view()),
     path(r'home/', views.BooksClass1.as_view()),
+    path(r'deleteuser/', views.deleteuser.as_view()),
 
 ]
 
